@@ -83,26 +83,30 @@ public class ContactsManager extends ReactContextBaseJavaModule {
                 null,
                 ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = ?",
                 new String[] { stringId }, null);
-        int labelId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.LABEL);
-        int emailId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS);
-        int typeId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.TYPE);
 
-        while (eCur.moveToNext()) {
-          WritableMap emailMap = Arguments.createMap();
-          emailMap.putString("address", eCur.getString(emailId));
-          int type = eCur.getInt(typeId);
-          if(type == 1){
-            emailMap.putString("label", "home");
-          } else if(type == 2){
-            emailMap.putString("label", "work");
-          } else if(type == 3){
-            emailMap.putString("label", "other");
-          } else if(type == 4){
-            emailMap.putString("label", "mobile");
-          } else if(type == 0){
-            emailMap.putString("label", eCur.getString(labelId));
-          }
-          emailAddresses.pushMap(emailMap);
+        if (eCur != null && eCur.getCount() > 0) {
+
+            int labelId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.LABEL);
+            int emailId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS);
+            int typeId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.TYPE);
+
+            while (eCur.moveToNext()) {
+              WritableMap emailMap = Arguments.createMap();
+              emailMap.putString("address", eCur.getString(emailId));
+              int type = eCur.getInt(typeId);
+              if(type == 1){
+                emailMap.putString("label", "home");
+              } else if(type == 2){
+                emailMap.putString("label", "work");
+              } else if(type == 3){
+                emailMap.putString("label", "other");
+              } else if(type == 4){
+                emailMap.putString("label", "mobile");
+              } else if(type == 0){
+                emailMap.putString("label", eCur.getString(labelId));
+              }
+              emailAddresses.pushMap(emailMap);
+            }
         }
 
         String thumbnailPath = this.getPhotoUri(id);
