@@ -35,76 +35,80 @@ public class ContactsManager extends ReactContextBaseJavaModule {
 
     WritableArray contacts = Arguments.createArray();
 
-    while (cur.moveToNext())
-    {
-      WritableMap contact = Arguments.createMap();
+    // @TODO: should we wrap this in a trycatch?
+    // <http://stackoverflow.com/a/29365254>
+    if (cur != null && cur.getCount() > 0) {
+      while (cur.moveToNext())
+      {
+        WritableMap contact = Arguments.createMap();
 
-      int id = cur.getInt(cur.getColumnIndex(ContactsContract.Contacts._ID));
-      String stringId = Integer.toString(id);
-      String whereName = ContactsContract.Data.MIMETYPE + " = ? AND " + ContactsContract.CommonDataKinds.StructuredName.CONTACT_ID + " = " + id;
-      String[] whereNameParams = new String[] { ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE };
-      Cursor nameCur = getReactApplicationContext().getContentResolver().query(ContactsContract.Data.CONTENT_URI, null, whereName, whereNameParams, ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME);
-      while (nameCur.moveToNext()) {
-          String given = nameCur.getString(nameCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME));
-          String family = nameCur.getString(nameCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME));
-          String middle = nameCur.getString(nameCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME));
-          contact.putString("givenName", given);
-          contact.putString("familyName", family);
-          contact.putString("middleName", middle);
-      }
-
-      WritableArray phoneNumbers = Arguments.createArray();
-      if (Integer.parseInt(cur.getString(cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
-        Cursor pCur = cr.query(
-                   ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-                   null,
-                   ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = ?",
-                   new String[]{stringId}, null);
-        while (pCur.moveToNext()) {
-            WritableMap phoneNoMap = Arguments.createMap();
-            String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
-            phoneNoMap.putString("number", phoneNo);
-            phoneNumbers.pushMap(phoneNoMap);
+        int id = cur.getInt(cur.getColumnIndex(ContactsContract.Contacts._ID));
+        String stringId = Integer.toString(id);
+        String whereName = ContactsContract.Data.MIMETYPE + " = ? AND " + ContactsContract.CommonDataKinds.StructuredName.CONTACT_ID + " = " + id;
+        String[] whereNameParams = new String[] { ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE };
+        Cursor nameCur = getReactApplicationContext().getContentResolver().query(ContactsContract.Data.CONTENT_URI, null, whereName, whereNameParams, ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME);
+        while (nameCur.moveToNext()) {
+            String given = nameCur.getString(nameCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME));
+            String family = nameCur.getString(nameCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME));
+            String middle = nameCur.getString(nameCur.getColumnIndex(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME));
+            contact.putString("givenName", given);
+            contact.putString("familyName", family);
+            contact.putString("middleName", middle);
         }
-        pCur.close();
-      }
 
-      WritableArray emailAddresses = Arguments.createArray();
-      Cursor eCur = cr.query(
-              ContactsContract.CommonDataKinds.Email.CONTENT_URI,
-              null,
-              ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = ?",
-              new String[] { stringId }, null);
-      int labelId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.LABEL);
-      int emailId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS);
-      int typeId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.TYPE);
-
-      while (eCur.moveToNext()) {
-        WritableMap emailMap = Arguments.createMap();
-        emailMap.putString("address", eCur.getString(emailId));
-        int type = eCur.getInt(typeId);
-        if(type == 1){
-          emailMap.putString("label", "home");
-        } else if(type == 2){
-          emailMap.putString("label", "work");
-        } else if(type == 3){
-          emailMap.putString("label", "other");
-        } else if(type == 4){
-          emailMap.putString("label", "mobile");
-        } else if(type == 0){
-          emailMap.putString("label", eCur.getString(labelId));
+        WritableArray phoneNumbers = Arguments.createArray();
+        if (Integer.parseInt(cur.getString(cur.getColumnIndex(ContactsContract.Contacts.HAS_PHONE_NUMBER))) > 0) {
+          Cursor pCur = cr.query(
+                     ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
+                     null,
+                     ContactsContract.CommonDataKinds.Phone.CONTACT_ID +" = ?",
+                     new String[]{stringId}, null);
+          while (pCur.moveToNext()) {
+              WritableMap phoneNoMap = Arguments.createMap();
+              String phoneNo = pCur.getString(pCur.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+              phoneNoMap.putString("number", phoneNo);
+              phoneNumbers.pushMap(phoneNoMap);
+          }
+          pCur.close();
         }
-        emailAddresses.pushMap(emailMap);
-      }
 
-      String thumbnailPath = this.getPhotoUri(id);
-      contact.putArray("phoneNumbers", phoneNumbers);
-      contact.putArray("emailAddresses", emailAddresses);
-      contact.putString("thumbnailPath", thumbnailPath);
-      contact.putInt("recordID", id);
-      contacts.pushMap(contact);
+        WritableArray emailAddresses = Arguments.createArray();
+        Cursor eCur = cr.query(
+                ContactsContract.CommonDataKinds.Email.CONTENT_URI,
+                null,
+                ContactsContract.CommonDataKinds.Email.CONTACT_ID + " = ?",
+                new String[] { stringId }, null);
+        int labelId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.LABEL);
+        int emailId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.ADDRESS);
+        int typeId = eCur.getColumnIndex(ContactsContract.CommonDataKinds.Email.TYPE);
+
+        while (eCur.moveToNext()) {
+          WritableMap emailMap = Arguments.createMap();
+          emailMap.putString("address", eCur.getString(emailId));
+          int type = eCur.getInt(typeId);
+          if(type == 1){
+            emailMap.putString("label", "home");
+          } else if(type == 2){
+            emailMap.putString("label", "work");
+          } else if(type == 3){
+            emailMap.putString("label", "other");
+          } else if(type == 4){
+            emailMap.putString("label", "mobile");
+          } else if(type == 0){
+            emailMap.putString("label", eCur.getString(labelId));
+          }
+          emailAddresses.pushMap(emailMap);
+        }
+
+        String thumbnailPath = this.getPhotoUri(id);
+        contact.putArray("phoneNumbers", phoneNumbers);
+        contact.putArray("emailAddresses", emailAddresses);
+        contact.putString("thumbnailPath", thumbnailPath);
+        contact.putInt("recordID", id);
+        contacts.pushMap(contact);
+      }
+      cur.close();
     }
-    cur.close();
     callback.invoke(null, contacts);
   }
 
